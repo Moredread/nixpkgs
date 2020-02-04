@@ -1,30 +1,37 @@
 { stdenv, callPackage, CoreFoundation
 , tiles ? true, Cocoa
-, debug ? false
+, debug ? false, cmake
 }:
 
 let
   inherit (stdenv.lib) substring;
   inherit (callPackage ./common.nix { inherit tiles CoreFoundation Cocoa debug; }) common utils;
   inherit (utils) fetchFromCleverRaven;
+  rev = "b10296";
 in
 
 stdenv.mkDerivation (common // rec {
-  version = "2019-11-22";
+  version = rev;
   name = "cataclysm-dda-git-${version}";
 
-  src = fetchFromCleverRaven {
-    rev = "a6c8ece992bffeae3788425dd4b3b5871e66a9cd";
-    sha256 = "0ww2q5gykxm802z1kffmnrfahjlx123j1gfszklpsv0b1fccm1ab";
+#  src = fetchFromCleverRaven {
+#    rev = "3e11834b57efa76cad25b0e598949bdb16faa81b";
+#    sha256 = "1hkklm9dy4hhdcdjzvz82afrs9wvwhsjawyd8n0bwszb8ympim42";
+#  };
+
+  src = fetchTarball {
+    url = "https://github.com/CleverRaven/Cataclysm-DDA/archive/cdda-jenkins-${rev}.tar.gz";
   };
 
   patches = [
     # Locale patch required for Darwin builds, see: https://github.com/NixOS/nixpkgs/pull/74064#issuecomment-560083970
-    ./patches/fix_locale_dir_git.patch
   ];
 
   makeFlags = common.makeFlags ++ [
-    "VERSION=git-${version}-${substring 0 8 src.rev}"
+    "VERSION=git-${version}"
+    "LTO=1"
+    "RUNTESTS=0"
+    "CMAKE_EXPORT_COMPILE_COMMANDS=ON"
   ];
 
   meta = with stdenv.lib.maintainers; common.meta // {
