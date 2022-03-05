@@ -1,4 +1,5 @@
 { lib, stdenv, runtimeShell, pkg-config, gettext, ncurses, CoreFoundation
+, ccacheStdenv
 , tiles, SDL2, SDL2_image, SDL2_mixer, SDL2_ttf, freetype, Cocoa
 , debug
 , useXdgDir
@@ -32,12 +33,17 @@ let
   '';
 in
 
-stdenv.mkDerivation {
+ccacheStdenv.mkDerivation {
   pname = "cataclysm-dda";
 
   nativeBuildInputs = [ pkg-config ];
 
   buildInputs = cursesDeps ++ optionals tiles tilesDeps;
+
+  preConfigure = ''
+    export CCACHE_DIR=/nix/var/cache/ccache
+    export CCACHE_UMASK=007
+  '';
 
   postPatch = ''
     patchShebangs .
