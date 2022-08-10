@@ -165,13 +165,11 @@ stdenv.mkDerivation {
       wrap ld-solaris ${./ld-solaris-wrapper.sh}
     '')
 
-    # Create symlinks for rest of the binaries.
+    # Create a symlink to as (the assembler).
     + ''
-      for binary in objdump objcopy size strings as ar nm gprof dwp c++filt addr2line ranlib readelf elfedit; do
-        if [ -e $ldPath/${targetPrefix}''${binary} ]; then
-          ln -s $ldPath/${targetPrefix}''${binary} $out/bin/${targetPrefix}''${binary}
-        fi
-      done
+      if [ -e $ldPath/${targetPrefix}as ]; then
+        ln -s $ldPath/${targetPrefix}as $out/bin/${targetPrefix}as
+      fi
 
     '' + (if !useMacosReexportHack then ''
       wrap ${targetPrefix}ld ${./ld-wrapper.sh} ''${ld:-$ldPath/${targetPrefix}ld}
