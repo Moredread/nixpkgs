@@ -1,5 +1,7 @@
 { stdenv
 , lib
+, testers
+, prusa-slicer
 , binutils
 , fetchFromGitHub
 , cmake
@@ -173,6 +175,11 @@ stdenv.mkDerivation rec {
       categories = [ "Development" ];
     })
   ];
+
+  passthru.tests.version = testers.testVersion {
+    package = prusa-slicer;
+    command = "prusa-slicer --help | head";
+  };
 
   meta = with lib; {
     description = "G-code generator for 3D printer";
