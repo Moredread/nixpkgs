@@ -1,6 +1,7 @@
 { stdenv
 , lib
 , testers
+, gitUpdater
 , prusa-slicer
 , binutils
 , fetchFromGitHub
@@ -176,9 +177,15 @@ stdenv.mkDerivation rec {
     })
   ];
 
-  passthru.tests.version = testers.testVersion {
-    package = prusa-slicer;
-    command = "prusa-slicer --help | head";
+  passthru = {
+    tests.version = testers.testVersion {
+      package = prusa-slicer;
+      command = "prusa-slicer --help | head";
+    };
+    updateScript = gitUpdater {
+      inherit pname version;
+      rev-prefix = "version_";
+    };
   };
 
   meta = with lib; {
