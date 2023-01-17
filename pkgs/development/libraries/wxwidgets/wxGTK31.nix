@@ -2,6 +2,7 @@
 , stdenv
 , fetchFromGitHub
 , fetchurl
+, curl
 , gnome2
 , gst_all_1
 , gtk3
@@ -16,6 +17,7 @@
 , compat28 ? false
 , compat30 ? true
 , unicode ? true
+, withCurl ? false
 , withEGL ? true
 , withMesa ? lib.elem stdenv.hostPlatform.system lib.platforms.mesaPlatforms
 , withWebKit ? stdenv.isDarwin
@@ -61,6 +63,7 @@ stdenv.mkDerivation rec {
     libXxf86vm
     xorgproto
   ]
+  ++ lib.optional withCurl curl
   ++ lib.optional withMesa libGLU
   ++ lib.optional (withWebKit && !stdenv.isDarwin) webkitgtk
   ++ lib.optional (withWebKit && stdenv.isDarwin) WebKit
@@ -87,6 +90,7 @@ stdenv.mkDerivation rec {
   ]
   ++ lib.optional (!withEGL) "--disable-glcanvasegl"
   ++ lib.optional unicode "--enable-unicode"
+  ++ lib.optional withCurl "--enable-webrequest"
   ++ lib.optional withMesa "--with-opengl"
   ++ lib.optionals stdenv.isDarwin [
     "--with-osx_cocoa"
