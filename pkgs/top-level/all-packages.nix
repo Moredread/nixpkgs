@@ -36764,7 +36764,7 @@ with pkgs;
 
   garden-of-coloured-lights = callPackage ../games/garden-of-coloured-lights { allegro = allegro4; };
 
-  gargoyle = callPackage ../games/gargoyle {
+  gargoyle = qt6Packages.callPackage ../games/gargoyle {
     inherit (darwin) cctools;
   };
 
