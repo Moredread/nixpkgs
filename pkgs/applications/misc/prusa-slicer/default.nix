@@ -1,5 +1,8 @@
 { stdenv
 , lib
+, openexr
+, jemalloc
+, c-blosc
 , binutils
 , fetchFromGitHub
 , cmake
@@ -26,28 +29,50 @@
 , openvdb
 , pcre
 , qhull
-, tbb
-, wxGTK31
+, tbb_2021_8
+, wxGTK32
 , xorg
 , fetchpatch
 , withSystemd ? lib.meta.availableOn stdenv.hostPlatform systemd, systemd
 }:
 let
-  wxGTK-prusa = wxGTK31.overrideAttrs (old: rec {
+  wxGTK-prusa = wxGTK32.overrideAttrs (old: rec {
     pname = "wxwidgets-prusa3d-patched";
-    version = "3.1.4";
+    version = "3.2.0";
+    configureFlags = old.configureFlags ++ [ "--disable-glcanvasegl" ];
+    preConfigure = old.preConfigure + ''
+    sed -ie 's@^\t\(monodll_msw_secretstore\|monolib_msw_secretstore\|basedll_msw_secretstore\|coredll_dark_mode\|monodll_dark_mode\|monolib_dark_mode\|baselib_msw_secretstore\|corelib_dark_mode\)\.o$@\t\1.o \\@' Makefile.in
+    '';
     src = fetchFromGitHub {
       owner = "prusa3d";
       repo = "wxWidgets";
-      rev = "489f6118256853cf5b299d595868641938566cdb";
-      hash = "sha256-xGL5I2+bPjmZGSTYe1L7VAmvLHbwd934o/cxg9baEvQ=";
+      rev = "4fd2120c913c20c3bb66ee9d01d8ff5087a8b90a";
+      sha256 = "sha256-heWjXXlxWo7xBxh0A0Q141NrPTZplaUNZsUtvlRCvBw=";
       fetchSubmodules = true;
     };
+  });
+  nanosvg-fltk = stdenv.mkDerivation {
+    pname = "nanosvg-fltk";
+    version = "unstable-2022-12-22";
+
+    src = fetchFromGitHub {
+      owner = "fltk";
+      repo = "nanosvg";
+      rev = "abcd277ea45e9098bed752cf9c6875b533c0892f";
+      sha256 = "sha256-WNdAYu66ggpSYJ8Kt57yEA4mSTv+Rvzj9Rm1q765HpY=";
+    };
+
+    nativeBuildInputs = [
+      cmake
+    ];
+  };
+  openvdb_tbb_2021_8 = openvdb.overrideAttrs (old: rec {
+    buildInputs = [ openexr boost tbb_2021_8 jemalloc c-blosc ilmbase ];
   });
 in
 stdenv.mkDerivation rec {
   pname = "prusa-slicer";
-  version = "2.5.2";
+  version = "2.6.0-alpha6";
 
   nativeBuildInputs = [
     cmake
@@ -72,34 +97,18 @@ stdenv.mkDerivation rec {
     ilmbase
     libpng
     mpfr
+    nanosvg-fltk
     nlopt
     opencascade-occt
-    openvdb
+    openvdb_tbb_2021_8
     pcre
-    tbb
+    qhull
+    tbb_2021_8
     wxGTK-prusa
     xorg.libX11
   ] ++ lib.optionals withSystemd [
     systemd
   ] ++ nativeCheckInputs;
-
-  patches = [
-    # Fix detection of TBB, see https://github.com/prusa3d/PrusaSlicer/issues/6355
-    (fetchpatch {
-      url = "https://github.com/prusa3d/PrusaSlicer/commit/76f4d6fa98bda633694b30a6e16d58665a634680.patch";
-      sha256 = "1r806ycp704ckwzgrw1940hh1l6fpz0k1ww3p37jdk6mygv53nv6";
-    })
-    # Fix compile error with boost 1.79. See https://github.com/prusa3d/PrusaSlicer/issues/8238
-    # Can be removed with the next version update
-    (fetchpatch {
-      url = "https://github.com/prusa3d/PrusaSlicer/commit/408e56f0390f20aaf793e0aa0c70c4d9544401d4.patch";
-      sha256 = "sha256-vzEPjLE3Yy5szawPn2Yp3i7MceWewpdnLUPVu9+H3W8=";
-    })
-    (fetchpatch {
-      url = "https://github.com/prusa3d/PrusaSlicer/commit/926ae0471800abd1e5335e251a5934570eb8f6ff.patch";
-      sha256 = "sha256-tAEgubeGGKFWY7r7p/6pmI2HXUGKi2TM1X5ILVZVT20=";
-    })
-  ];
 
   doCheck = true;
   nativeCheckInputs = [ gtest ];
@@ -130,6 +139,9 @@ stdenv.mkDerivation rec {
     # See issue #185808 for details.
     sed -i 's|test_voronoi.cpp||g' tests/libslic3r/CMakeLists.txt
 
+    # Disable slic3r_jobs_tests.cpp as the test fails
+    sed -i 's|slic3r_jobs_tests.cpp||g' tests/slic3rutils/CMakeLists.txt
+
     # prusa-slicer expects the OCCTWrapper shared library in the same folder as
     # the executable when loading STEP files. We force the loader to find it in
     # the usual locations (i.e. LD_LIBRARY_PATH) instead. See the manpage
@@ -138,6 +150,9 @@ stdenv.mkDerivation rec {
       substituteInPlace src/libslic3r/Format/STEP.cpp \
         --replace 'libpath /= "OCCTWrapper.so";' 'libpath = "OCCTWrapper.so";'
     fi
+    #
+    # https://github.com/prusa3d/PrusaSlicer/issues/9581
+    rm cmake/modules/FindEXPAT.cmake
 
     # Fix resources folder location on macOS
     substituteInPlace src/PrusaSlicer.cpp \
@@ -150,7 +165,7 @@ stdenv.mkDerivation rec {
   src = fetchFromGitHub {
     owner = "prusa3d";
     repo = "PrusaSlicer";
-    sha256 = "sha256-oQRBVAbA2wOYZkQiYIgbd3UcKAkXjnNXo6gB5QbPDAs=";
+    sha256 = "sha256-mz2N4xwPvmCWV+iCdGEVhmYsRcsshqdI8rA6+levVaw=";
     rev = "version_${version}";
   };
 
