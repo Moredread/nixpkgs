@@ -16,8 +16,17 @@
 , enableZstd ? true
 , zstd
 , nixosTests
+, fetchFromGitHub
 }:
 
+let
+  patches-git = fetchFromGitHub {
+   repo = "rsync-patches";
+   owner = "WayneD";
+   rev = "v3.2.7";
+   sha256 = "sha256-MjXYY2WOxsmajGsEwPrgS9Qpi6wgVPWJ8+I+aUCu/eU=";
+  };
+in
 stdenv.mkDerivation rec {
   pname = "rsync";
   version = "3.2.7";
@@ -29,6 +38,12 @@ stdenv.mkDerivation rec {
   };
 
   nativeBuildInputs = [ perl ];
+
+  patches = [
+   "${patches-git}/detect-renamed.diff"
+   "${patches-git}/detect-renamed-lax.diff"
+   "${patches-git}/congestion.diff"
+  ];
 
   buildInputs = [ libiconv zlib popt ]
     ++ lib.optional enableACLs acl
