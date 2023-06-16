@@ -13,7 +13,8 @@
   cmake,
   wrapQtAppsHook,
   libvorbis,
-  smpeg
+  smpeg,
+  fetchpatch
 }:
 
 stdenv.mkDerivation rec {
@@ -47,6 +48,12 @@ stdenv.mkDerivation rec {
       --replace '=''${prefix}//' '='
   '';
 
+  patches = [
+    (fetchpatch {
+      url = "https://raw.githubusercontent.com/RedHatter/granite/master/click-insert.patch";
+      sha256 = "sha256-ID0WEJlBhqgoJRtsDzNbM45jJ5rTuSAjYPWUVOsygiM=";
+    })
+  ];
 
   meta = with lib; {
     broken = stdenv.isDarwin;
