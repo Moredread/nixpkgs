@@ -22,10 +22,10 @@ stdenv.mkDerivation rec {
   version = "2023.1";
 
   src = fetchFromGitHub {
-    owner = "garglk";
+    owner = "Moredread";
     repo = "garglk";
-    rev = version;
-    hash = "sha256-XsN5FXWJb3DSOjipxr/HW9R7QS+7iEaITERTrbGEMwA=";
+    rev = "c6d17c865a6c9cfd7cef059ee0906846e3bcffbb";
+    hash = "sha256-yCogR0MtxCEzKh25OTDKLoAZwMezGxh/uwtkJvGGLDE=";
   };
 
   nativeBuildInputs = [ pkg-config cmake wrapQtAppsHook ] ++ lib.optional stdenv.isDarwin cctools;
@@ -43,17 +43,6 @@ stdenv.mkDerivation rec {
   # env.NIX_CFLAGS_COMPILE = "-fcommon";
 
   # Fix the paths in .pc, even though it's unclear if these .pc are really useful.
-  postFixup = ''
-    substituteInPlace "$out"/lib/pkgconfig/garglk.pc \
-      --replace '=''${prefix}//' '='
-  '';
-
-  patches = [
-    (fetchpatch {
-      url = "https://raw.githubusercontent.com/RedHatter/granite/master/click-insert.patch";
-      sha256 = "sha256-ID0WEJlBhqgoJRtsDzNbM45jJ5rTuSAjYPWUVOsygiM=";
-    })
-  ];
 
   meta = with lib; {
     broken = stdenv.isDarwin;
