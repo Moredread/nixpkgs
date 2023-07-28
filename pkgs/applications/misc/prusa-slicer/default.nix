@@ -1,5 +1,7 @@
 { stdenv
 , lib
+, testers
+, prusa-slicer
 , openexr
 , jemalloc
 , c-blosc
@@ -190,6 +192,11 @@ stdenv.mkDerivation rec {
       --prefix LD_LIBRARY_PATH : "$out/lib"
     )
   '';
+
+  passthru.tests.version = testers.testVersion {
+    package = prusa-slicer;
+    command = "prusa-slicer --help";
+  };
 
   meta = with lib; {
     description = "G-code generator for 3D printer";
