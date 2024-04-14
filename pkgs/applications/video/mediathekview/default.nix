@@ -32,20 +32,12 @@ stdenv.mkDerivation rec {
 
     mkdir -p $out/{bin,lib} $out/share/pixmaps
 
-    install -m644 MediathekView.jar $out/lib
+    install -m755 MediathekView $out/bin
+    install -m644 MediathekView.jar $out/bin
     install -m644 MediathekView.svg $out/share/pixmaps
 
-    makeWrapper ${jre}/bin/java $out/bin/mediathek \
-      --add-flags "${jvmArgs} -jar $out/lib/MediathekView.jar" \
-      --suffix LD_LIBRARY_PATH : "${libraryPath}"
-
-    makeWrapper ${jre}/bin/java $out/bin/MediathekView \
-      --add-flags "${jvmArgs} -jar $out/lib/MediathekView.jar" \
-      --suffix LD_LIBRARY_PATH : "${libraryPath}"
-
-    makeWrapper ${jre}/bin/java $out/bin/MediathekView_ipv4 \
-      --add-flags "${jvmArgs} -Djava.net.preferIPv4Stack=true -jar $out/lib/MediathekView.jar" \
-      --suffix LD_LIBRARY_PATH : "${libraryPath}"
+    wrapProgram $out/bin/MediathekView \
+       --set INSTALL4J_JAVA_HOME "${jre}"
 
     runHook postInstall
   '';
