@@ -7,7 +7,7 @@
   installShellFiles,
   versionCheckHook,
   makeWrapper,
-  enableCmount ? true,
+  enableCmount ? !stdenv.hostPlatform.isStatic,
   fuse,
   fuse3,
   macfuse-stubs,
@@ -52,7 +52,7 @@ buildGoModule (finalAttrs: {
     "-X github.com/rclone/rclone/fs.Version=${finalAttrs.src.tag}"
   ];
 
-  postConfigure = lib.optionalString (!stdenv.hostPlatform.isDarwin) ''
+  postConfigure = lib.optionalString (enableCmount && !stdenv.hostPlatform.isDarwin) ''
     substituteInPlace vendor/github.com/winfsp/cgofuse/fuse/host_cgo.go \
         --replace-fail '"libfuse.so.2"' '"${lib.getLib fuse}/lib/libfuse.so.2"'
   '';
