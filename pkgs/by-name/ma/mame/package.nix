@@ -70,6 +70,7 @@ stdenv.mkDerivation (finalAttrs: {
     "USE_SYSTEM_LIB_UTF8PROC=1"
     "USE_SYSTEM_LIB_SQLITE3=1"
     "USE_SYSTEM_LIB_ZLIB=1"
+    "ARCHOPTS=-march=native"
   ];
 
   # https://docs.mamedev.org/initialsetup/compilingmame.html

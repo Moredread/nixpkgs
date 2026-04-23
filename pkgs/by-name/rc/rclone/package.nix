@@ -72,10 +72,13 @@ buildGoModule (finalAttrs: {
         installShellCompletion rclone.$shell
       done
 
-      # filesystem helpers
-      ln -s $out/bin/rclone $out/bin/rclonefs
-      ln -s $out/bin/rclone $out/bin/mount.rclone
     ''
+    +
+      lib.optionalString enableCmount ''
+        # filesystem helpers
+        ln -s $out/bin/rclone $out/bin/rclonefs
+        ln -s $out/bin/rclone $out/bin/mount.rclone
+      ''
     +
       lib.optionalString (enableCmount && !stdenv.hostPlatform.isDarwin)
         # use --suffix here to ensure we don't shadow /run/wrappers/bin/fusermount3,
